@@ -53,8 +53,13 @@ func (c *Client) UpdatePlayer(player models.Player) error {
 
 func (c *Client) GetPlayerById(id string) (models.Player, error) {
 	var player models.Player
-	err := c.playerCollection.FindOne(context.Background(),
-		bson.D{{"_id", primitive.ObjectIDFromHex(id)}}).Decode(&player)
+	newId, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return player, utils.InvalidObjectID
+	}
+
+	err = c.playerCollection.FindOne(context.Background(),
+		bson.D{{"_id", newId}}).Decode(&player)
 	if err != nil {
 		return player, err
 	}
@@ -65,4 +70,3 @@ func (c *Client) GetPlayerById(id string) (models.Player, error) {
 func (c *Client) GetPlayerPage(paginated utils.PaginationRequest) (interface{}, error) {
 	return nil, nil
 }
-

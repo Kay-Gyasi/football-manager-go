@@ -50,8 +50,13 @@ func (c *Client) UpdateTeam(team models.Team) error {
 
 func (c *Client) GetTeamById(id string) (models.Team, error) {
 	var team models.Team
-	err := c.teamCollection.FindOne(context.Background(),
-		bson.D{{"_id", primitive.ObjectIDFromHex(id)}}).Decode(&team)
+	newId, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return team, utils.InvalidObjectID
+	}
+
+	err = c.teamCollection.FindOne(context.Background(),
+		bson.D{{"_id", newId}}).Decode(&team)
 	if err != nil {
 		return team, err
 	}

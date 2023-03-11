@@ -6,10 +6,14 @@ import (
 	"football-manager-go/utils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"time"
 )
 
 func (c *Client) AddCoach(coach models.Coach) (string, error) {
-	response, err := c.coachCollection.InsertOne(context.Background(), coach)
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
+	defer cancel()
+
+	response, err := c.coachCollection.InsertOne(ctx, coach)
 	if err != nil {
 		return "", err
 	}
@@ -18,13 +22,16 @@ func (c *Client) AddCoach(coach models.Coach) (string, error) {
 }
 
 func (c *Client) DeleteCoach(id string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
+	defer cancel()
+
 	newId, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return err
 	}
 
 	filter := bson.D{{Key: "_id", Value: newId}}
-	_, err = c.coachCollection.DeleteOne(context.Background(), filter)
+	_, err = c.coachCollection.DeleteOne(ctx, filter)
 	if err != nil {
 		return err
 	}
@@ -33,6 +40,9 @@ func (c *Client) DeleteCoach(id string) error {
 }
 
 func (c *Client) UpdateCoach(coach models.Coach) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
+	defer cancel()
+
 	if coach.ID == primitive.NilObjectID {
 		return utils.CantUpdateNewDocument
 	}
@@ -41,7 +51,7 @@ func (c *Client) UpdateCoach(coach models.Coach) error {
 	update := bson.M{"$set": bson.M{"username": coach.Username, "firstname": coach.Firstname,
 		"lastname": coach.Lastname, "type": coach.Type, "date_of_birth": coach.DateOfBirth,
 		"email": coach.Email, "phone": coach.Phone, "years_of_experience": coach.YearsOfExperience}}
-	_, err := c.coachCollection.UpdateOne(context.Background(), filter, update)
+	_, err := c.coachCollection.UpdateOne(ctx, filter, update)
 	if err != nil {
 		return err
 	}
@@ -50,14 +60,16 @@ func (c *Client) UpdateCoach(coach models.Coach) error {
 }
 
 func (c *Client) GetCoachById(id string) (models.Coach, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
+	defer cancel()
+
 	var coach models.Coach
 	newId, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return coach, utils.InvalidObjectID
 	}
 
-	err = c.coachCollection.FindOne(context.Background(),
-		bson.D{{"_id", newId}}).Decode(&coach)
+	err = c.coachCollection.FindOne(ctx, bson.D{{"_id", newId}}).Decode(&coach)
 	if err != nil {
 		return coach, utils.CantFindCoach
 	}

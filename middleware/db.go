@@ -5,7 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func InstallDatabase(database db.IDatabase) func(c *gin.Context) {
+func InstallDatabase(database db.IDatabase) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Set("database", database)
 		c.Next()

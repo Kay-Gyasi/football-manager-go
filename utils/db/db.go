@@ -9,8 +9,8 @@ import (
 )
 
 type IDatabase interface {
-	Connect() (interface{}, error)
-	Disconnect() error
+	Connect(ctx *context.Context) (interface{}, error)
+	Disconnect(ctx *context.Context) error
 
 	AddCoach(coach models.Coach) (string, error)
 	DeleteCoach(id string) error
@@ -39,10 +39,10 @@ type Client struct {
 	teamCollection   *mongo.Collection
 }
 
-func (c *Client) Connect() (interface{}, error) {
+func (c *Client) Connect(ctx *context.Context) (interface{}, error) {
 	var dbName string
 
-	client, err := mongo.Connect(context.Background())
+	client, err := mongo.Connect(*ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -63,6 +63,6 @@ func (c *Client) Connect() (interface{}, error) {
 	return c.DB.Client(), nil
 }
 
-func (c *Client) Disconnect() error {
-	return c.DB.Client().Disconnect(context.Background())
+func (c *Client) Disconnect(ctx *context.Context) error {
+	return c.DB.Client().Disconnect(*ctx)
 }
