@@ -2,15 +2,33 @@ package db
 
 import (
 	"context"
+	"football-manager-go/models"
+	"football-manager-go/utils"
 	"go.mongodb.org/mongo-driver/mongo"
 	"os"
-	"time"
 )
 
 type IDatabase interface {
 	Connect() (interface{}, error)
 	Disconnect() error
-	DoMigration() error
+
+	AddCoach(coach models.Coach) (string, error)
+	DeleteCoach(id string) error
+	UpdateCoach(coach models.Coach) error
+	GetCoachById(id string) (models.Coach, error)
+	GetCoachPage(paginated utils.PaginationRequest) (interface{}, error)
+
+	AddPlayer(player models.Player) (string, error)
+	DeletePlayer(id string) error
+	UpdatePlayer(coach models.Player) error
+	GetPlayerById(id string) (models.Player, error)
+	GetPlayerPage(paginated utils.PaginationRequest) (interface{}, error)
+
+	AddTeam(team models.Team) (string, error)
+	DeleteTeam(id string) error
+	UpdateTeam(team models.Team) error
+	GetTeamById(id string) (models.Team, error)
+	GetTeamPage(paginated utils.PaginationRequest) (interface{}, error)
 }
 
 type Client struct {
@@ -23,10 +41,8 @@ type Client struct {
 
 func (c *Client) Connect() (interface{}, error) {
 	var dbName string
-	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
-	defer cancel()
 
-	client, err := mongo.Connect(ctx)
+	client, err := mongo.Connect(context.Background())
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +64,5 @@ func (c *Client) Connect() (interface{}, error) {
 }
 
 func (c *Client) Disconnect() error {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	return c.DB.Client().Disconnect(ctx)
+	return c.DB.Client().Disconnect(context.Background())
 }
