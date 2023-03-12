@@ -8,7 +8,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func (c *Client) AddTeam(team models.Team) (string, error) {
+func (c *Client) AddTeam(team *models.Team) (string, error) {
 	response, err := c.teamCollection.InsertOne(context.Background(), team)
 	if err != nil {
 		return "", err
@@ -17,14 +17,10 @@ func (c *Client) AddTeam(team models.Team) (string, error) {
 	return response.InsertedID.(primitive.ObjectID).Hex(), nil
 }
 
-func (c *Client) DeleteTeam(id string) error {
-	newId, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		return err
-	}
+func (c *Client) DeleteTeam(id primitive.ObjectID) error {
 
-	filter := bson.D{{Key: "_id", Value: newId}}
-	_, err = c.teamCollection.DeleteOne(context.Background(), filter)
+	filter := bson.D{{Key: "_id", Value: id}}
+	_, err := c.teamCollection.DeleteOne(context.Background(), filter)
 	if err != nil {
 		return err
 	}
@@ -32,7 +28,7 @@ func (c *Client) DeleteTeam(id string) error {
 	return nil
 }
 
-func (c *Client) UpdateTeam(team models.Team) error {
+func (c *Client) UpdateTeam(team *models.Team) error {
 	if team.ID == primitive.NilObjectID {
 		return utils.CantUpdateNewDocument
 	}
@@ -48,15 +44,11 @@ func (c *Client) UpdateTeam(team models.Team) error {
 	return nil
 }
 
-func (c *Client) GetTeamById(id string) (models.Team, error) {
+func (c *Client) GetTeamById(id primitive.ObjectID) (models.Team, error) {
 	var team models.Team
-	newId, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		return team, utils.InvalidObjectID
-	}
 
-	err = c.teamCollection.FindOne(context.Background(),
-		bson.D{{"_id", newId}}).Decode(&team)
+	err := c.teamCollection.FindOne(context.Background(),
+		bson.D{{"_id", id}}).Decode(&team)
 	if err != nil {
 		return team, err
 	}
@@ -64,6 +56,6 @@ func (c *Client) GetTeamById(id string) (models.Team, error) {
 	return team, nil
 }
 
-func (c *Client) GetTeamPage(paginated utils.PaginationRequest) (interface{}, error) {
+func (c *Client) GetTeamPage(paginated *utils.PaginationRequest) (interface{}, error) {
 	return nil, nil
 }

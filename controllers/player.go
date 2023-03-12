@@ -7,16 +7,13 @@ import (
 	"football-manager-go/utils"
 	"football-manager-go/utils/db"
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"net/http"
 	"strings"
 )
 
-var Validate = validator.New()
-
-func GetCoach(c *gin.Context) {
+func GetPlayer(c *gin.Context) {
 	id := c.Param("id")
 	database, ok := c.MustGet("database").(db.IDatabase)
 	if !ok {
@@ -38,9 +35,9 @@ func GetCoach(c *gin.Context) {
 		return
 	}
 
-	coach, err := database.GetCoachById(objectId)
+	coach, err := database.GetPlayerById(objectId)
 	if err != nil {
-		if errors.Is(err, utils.InvalidObjectID) || errors.Is(err, utils.CantFindCoach) {
+		if errors.Is(err, utils.InvalidObjectID) || errors.Is(err, utils.CantFindPlayer) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid id"})
 			c.Abort()
 			return
@@ -55,39 +52,39 @@ func GetCoach(c *gin.Context) {
 	c.Done()
 }
 
-func InsertCoach(c *gin.Context) {
-	var coach models.Coach
+func InsertPlayer(c *gin.Context) {
+	var player models.Player
 	dbClient := c.MustGet("database").(db.IDatabase)
 
-	if err := c.BindJSON(&coach); err != nil {
+	if err := c.BindJSON(&player); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		c.Abort()
 		return
 	}
 
-	validationErr := Validate.Struct(coach)
+	validationErr := Validate.Struct(player)
 	if validationErr != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": validationErr.Error()})
 		return
 	}
 
-	if coach.Type != embedded.IsCoach {
+	if player.Type != embedded.IsPlayer {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user type"})
 		c.Abort()
 		return
 	}
 
 	var usernameBuilder strings.Builder
-	usernameBuilder.WriteString(coach.Firstname)
+	usernameBuilder.WriteString(player.Firstname)
 	usernameBuilder.WriteString(" ")
-	usernameBuilder.WriteString(coach.Lastname)
-	coach.Username = usernameBuilder.String()
+	usernameBuilder.WriteString(player.Lastname)
+	player.Username = usernameBuilder.String()
 
-	// checking if coach already exists in database
-	filter := bson.M{"user.firstname": coach.Firstname, "user.lastname": coach.Lastname,
-		"user.email": coach.Email, "user.phone": coach.Phone}
+	// checking if player already exists in database
+	filter := bson.M{"user.firstname": player.Firstname, "user.lastname": player.Lastname,
+		"user.email": player.Email, "user.phone": player.Phone}
 
-	filtered, err := dbClient.GetCoachByFilter(filter)
+	filtered, err := dbClient.GetPlayerByFilter(filter)
 	if filtered.ID != primitive.NilObjectID {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Coach already exists"})
 		c.Abort()
@@ -95,7 +92,7 @@ func InsertCoach(c *gin.Context) {
 	}
 
 	var id string
-	id, err = dbClient.AddCoach(&coach)
+	id, err = dbClient.AddPlayer(&player)
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		c.Abort()
@@ -106,35 +103,35 @@ func InsertCoach(c *gin.Context) {
 	c.Done()
 }
 
-func UpdateCoach(c *gin.Context) {
-	var coach models.Coach
+func UpdatePlayer(c *gin.Context) {
+	var player models.Player
 	dbClient := c.MustGet("database").(db.IDatabase)
 
-	if err := c.BindJSON(&coach); err != nil {
+	if err := c.BindJSON(&player); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		c.Abort()
 		return
 	}
 
-	validationErr := Validate.Struct(coach)
+	validationErr := Validate.Struct(player)
 	if validationErr != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": validationErr.Error()})
 		return
 	}
 
-	if coach.ID == primitive.NilObjectID {
+	if player.ID == primitive.NilObjectID {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid id"})
 		c.Abort()
 		return
 	}
 
-	if coach.Type != embedded.IsCoach {
+	if player.Type != embedded.IsPlayer {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user type"})
 		c.Abort()
 		return
 	}
 
-	err := dbClient.UpdateCoach(&coach)
+	err := dbClient.UpdatePlayer(&player)
 	if err != nil {
 		if errors.Is(err, utils.InvalidObjectID) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid id"})
@@ -151,7 +148,7 @@ func UpdateCoach(c *gin.Context) {
 	c.Done()
 }
 
-func DeleteCoach(c *gin.Context) {
+func DeletePlayer(c *gin.Context) {
 	id := c.Param("id")
 	database, ok := c.MustGet("database").(db.IDatabase)
 	if !ok {
@@ -173,7 +170,7 @@ func DeleteCoach(c *gin.Context) {
 		return
 	}
 
-	err = database.DeleteCoach(objectId)
+	err = database.DeletePlayer(objectId)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		c.Abort()
@@ -184,7 +181,7 @@ func DeleteCoach(c *gin.Context) {
 	c.Done()
 }
 
-func GetCoachPage(c *gin.Context) {
+func GetPlayerPage(c *gin.Context) {
 	var paginated utils.PaginationRequest
 	dbClient := c.MustGet("database").(db.IDatabase)
 
@@ -207,7 +204,7 @@ func GetCoachPage(c *gin.Context) {
 		paginated.PageSize = 10
 	}
 
-	page, err := dbClient.GetCoachPage(&paginated)
+	page, err := dbClient.GetPlayerPage(&paginated)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		c.Abort()

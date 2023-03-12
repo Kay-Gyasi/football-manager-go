@@ -2,9 +2,12 @@ package db
 
 import (
 	"context"
+	"fmt"
 	"football-manager-go/models"
 	"football-manager-go/utils"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"os"
 )
 
@@ -12,23 +15,25 @@ type IDatabase interface {
 	Connect(ctx *context.Context) (interface{}, error)
 	Disconnect(ctx *context.Context) error
 
-	AddCoach(coach models.Coach) (string, error)
-	DeleteCoach(id string) error
-	UpdateCoach(coach models.Coach) error
-	GetCoachById(id string) (models.Coach, error)
-	GetCoachPage(paginated utils.PaginationRequest) (interface{}, error)
+	AddCoach(coach *models.Coach) (string, error)
+	DeleteCoach(id primitive.ObjectID) error
+	UpdateCoach(coach *models.Coach) error
+	GetCoachById(id primitive.ObjectID) (models.Coach, error)
+	GetCoachByFilter(filter interface{}) (models.Coach, error)
+	GetCoachPage(paginated *utils.PaginationRequest) (interface{}, error)
 
-	AddPlayer(player models.Player) (string, error)
-	DeletePlayer(id string) error
-	UpdatePlayer(coach models.Player) error
-	GetPlayerById(id string) (models.Player, error)
-	GetPlayerPage(paginated utils.PaginationRequest) (interface{}, error)
+	AddPlayer(player *models.Player) (string, error)
+	DeletePlayer(id primitive.ObjectID) error
+	UpdatePlayer(coach *models.Player) error
+	GetPlayerById(id primitive.ObjectID) (models.Player, error)
+	GetPlayerByFilter(filter interface{}) (models.Player, error)
+	GetPlayerPage(paginated *utils.PaginationRequest) (interface{}, error)
 
-	AddTeam(team models.Team) (string, error)
-	DeleteTeam(id string) error
-	UpdateTeam(team models.Team) error
-	GetTeamById(id string) (models.Team, error)
-	GetTeamPage(paginated utils.PaginationRequest) (interface{}, error)
+	AddTeam(team *models.Team) (string, error)
+	DeleteTeam(id primitive.ObjectID) error
+	UpdateTeam(team *models.Team) error
+	GetTeamById(id primitive.ObjectID) (models.Team, error)
+	GetTeamPage(paginated *utils.PaginationRequest) (interface{}, error)
 }
 
 type Client struct {
@@ -42,7 +47,13 @@ type Client struct {
 func (c *Client) Connect(ctx *context.Context) (interface{}, error) {
 	var dbName string
 
-	client, err := mongo.Connect(*ctx)
+	client, err := mongo.NewClient(options.Client().ApplyURI(os.Getenv("URI")))
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+
+	err = client.Connect(*ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -55,9 +66,9 @@ func (c *Client) Connect(ctx *context.Context) (interface{}, error) {
 
 	*c = Client{
 		DB:               client.Database(dbName),
-		coachCollection:  client.Database(dbName).Collection("coaches"),
-		playerCollection: client.Database(dbName).Collection("players"),
-		teamCollection:   client.Database(dbName).Collection("teams"),
+		coachCollection:  client.Database(dbName).Collection("Coaches"),
+		playerCollection: client.Database(dbName).Collection("Players"),
+		teamCollection:   client.Database(dbName).Collection("Teams"),
 	}
 
 	return c.DB.Client(), nil

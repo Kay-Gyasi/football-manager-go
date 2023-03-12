@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"football-manager-go/controllers"
 	"football-manager-go/middleware"
 	"football-manager-go/routes"
 	"football-manager-go/utils/db"
@@ -10,10 +9,18 @@ import (
 	"github.com/joho/godotenv"
 	"log"
 	"os"
+	"time"
 )
 
 func main() {
-	ctx := context.Background()
+	err := godotenv.Load("example.env")
+	if err != nil {
+		log.Fatal("Error loading .env file", err)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
+	defer cancel()
+
 	client := &db.Client{}
 	if _, err := client.Connect(&ctx); err != nil {
 		log.Fatal("Cannot connect to database: ", err.Error())
@@ -23,19 +30,9 @@ func main() {
 		_ = client.Disconnect(&ctx)
 	}()
 
-	err := godotenv.Load("example.env")
-	if err != nil {
-		log.Fatal("Error loading .env file", err)
-	}
-
 	router := gin.Default()
 	router.Use(middleware.InstallDatabase(client))
-	v1 := router.Group(routes.Base)
-
-	coachRoutes := v1.Group("/coaches")
-	{
-		coachRoutes.GET("/:id", controllers.GetCoach)
-	}
+	routes.DeclareRoutes(router)
 
 	log.Fatal(router.Run(":" + os.Getenv("PORT")))
 }
