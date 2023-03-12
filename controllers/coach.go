@@ -65,9 +65,16 @@ func InsertCoach(c *gin.Context) {
 		return
 	}
 
+	if len(coach.Password) < 1 {
+		utils.FailureResponse(c, 400, "Invalid password")
+		c.Abort()
+		return
+	}
+
 	validationErr := Validate.Struct(coach)
 	if validationErr != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": validationErr.Error()})
+		c.Abort()
 		return
 	}
 
@@ -82,6 +89,8 @@ func InsertCoach(c *gin.Context) {
 	usernameBuilder.WriteString(" ")
 	usernameBuilder.WriteString(coach.Lastname)
 	coach.Username = usernameBuilder.String()
+
+	coach.PasswordHash = HashPassword(coach.Password)
 
 	// checking if coach already exists in database
 	filter := bson.M{"user.firstname": coach.Firstname, "user.lastname": coach.Lastname,

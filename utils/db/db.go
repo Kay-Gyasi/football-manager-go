@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"football-manager-go/models"
 	"football-manager-go/utils"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"os"
+	"time"
 )
 
 type IDatabase interface {
@@ -21,6 +23,7 @@ type IDatabase interface {
 	GetCoachById(id primitive.ObjectID) (models.Coach, error)
 	GetCoachByFilter(filter interface{}) (models.Coach, error)
 	GetCoachPage(paginated *utils.PaginationRequest) (interface{}, error)
+	GetCoachCollection() *mongo.Collection
 
 	AddPlayer(player *models.Player) (string, error)
 	DeletePlayer(id primitive.ObjectID) error
@@ -28,12 +31,15 @@ type IDatabase interface {
 	GetPlayerById(id primitive.ObjectID) (models.Player, error)
 	GetPlayerByFilter(filter interface{}) (models.Player, error)
 	GetPlayerPage(paginated *utils.PaginationRequest) (interface{}, error)
+	GetPlayerCollection() *mongo.Collection
 
 	AddTeam(team *models.Team) (string, error)
 	DeleteTeam(id primitive.ObjectID) error
 	UpdateTeam(team *models.Team) error
 	GetTeamById(id primitive.ObjectID) (models.Team, error)
 	GetTeamPage(paginated *utils.PaginationRequest) (interface{}, error)
+
+	GetUserById(id string, collection *mongo.Collection) (interface{}, error)
 }
 
 type Client struct {
@@ -76,4 +82,27 @@ func (c *Client) Connect(ctx *context.Context) (interface{}, error) {
 
 func (c *Client) Disconnect(ctx *context.Context) error {
 	return c.DB.Client().Disconnect(*ctx)
+}
+
+func (c *Client) GetUserById(id string, collection *mongo.Collection) (interface{}, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
+	defer cancel()
+
+	newId, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return nil, err
+	}
+
+	var user interface{}
+	filter := bson.D{{Key: "_id", Value: newId}}
+	err = collection.FindOne(ctx, filter).Decode(user)
+	if err != nil {
+		return nil, err
+	}
+
+	if collection.Name() == "Players" {
+		return user.(models.Player), nil
+	} else {
+		return user.(models.Coach), nil
+	}
 }

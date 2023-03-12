@@ -24,6 +24,7 @@ type User struct {
 	Type         UserType           `json:"type" bson:"type" validate:"required"`
 	DateOfBirth  primitive.DateTime `json:"dateOfBirth" bson:"date_of_birth"`
 	Email        string             `json:"email" bson:"email" validate:"required,min=5,max=30"`
+	Password     string             `json:"password" bson:"-"`
 	PasswordHash string             `json:"-" bson:"password_hash"`
 	Phone        string             `json:"phone" bson:"phone" validate:"required,min=9,max=12"`
 	Roles        []Role             `json:"-" bson:"roles"`

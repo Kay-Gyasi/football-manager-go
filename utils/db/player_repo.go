@@ -6,6 +6,7 @@ import (
 	"football-manager-go/utils"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 	options2 "go.mongodb.org/mongo-driver/mongo/options"
 	"math"
 	"time"
@@ -125,4 +126,8 @@ func (c *Client) GetPlayerPage(paginated *utils.PaginationRequest) (interface{},
 
 	defer cursor.Close(ctx)
 	return paginationRes, nil
+}
+
+func (c *Client) GetPlayerCollection() *mongo.Collection {
+	return c.playerCollection
 }

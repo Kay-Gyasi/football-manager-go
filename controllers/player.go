@@ -68,6 +68,12 @@ func InsertPlayer(c *gin.Context) {
 		return
 	}
 
+	if len(player.Password) < 1 {
+		utils.FailureResponse(c, 400, "Invalid password")
+		c.Abort()
+		return
+	}
+
 	if player.Type != embedded.IsPlayer {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user type"})
 		c.Abort()
@@ -79,6 +85,8 @@ func InsertPlayer(c *gin.Context) {
 	usernameBuilder.WriteString(" ")
 	usernameBuilder.WriteString(player.Lastname)
 	player.Username = usernameBuilder.String()
+
+	player.PasswordHash = HashPassword(player.Password)
 
 	// checking if player already exists in database
 	filter := bson.M{"user.firstname": player.Firstname, "user.lastname": player.Lastname,
